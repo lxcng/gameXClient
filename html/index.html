@@ -1,130 +1,14 @@
 <html>
 	<head>
-		<title>game X &#937; 0.0</title>
+		<title>game X &#937; 0.1</title>
 		<style>
 			body { margin: 0; }
 			canvas { width: 100%; height: 100% }
 		</style>
 	</head>
 	<body>
-		<script src="js/three.js"></script>
-		<script src="js/stats.min.js"></script>
-
-		<script>
-			var container, stats;
-			var camera, scene, renderer;
-
-			var cube;
-
-			var step = 0.1;
-			var keyW = false;
-			var keyA = false;
-			var keyS = false;
-			var keyD = false;
-
-			init();
-			render();
-
-			function init() {
-				container = document.createElement( 'div' );
-				document.body.appendChild( container );
-
-				scene = new THREE.Scene();
-				camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
-				// camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, -500, 1000 );
-				// camera.position.x = 0;
-				// camera.position.y = 0;
-				// camera.position.z = 10;
-				// camera.lookAt( scene.position );
-				camera.position.z = 5;
-
-				renderer = new THREE.WebGLRenderer();
-				renderer.setClearColor( 0xffffff );
-
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				container.appendChild( renderer.domElement );
-
-				stats = new Stats();
-				stats.domElement.style.position = 'absolute';
-				stats.domElement.style.top = '0px';
-				container.appendChild( stats.domElement );
-
-				var geometry = new THREE.BoxGeometry( 0.5, 0.5, 0.5 );
-				var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-				cube = new THREE.Mesh( geometry, material );
-				scene.add( cube );
-
-				document.addEventListener( 'keydown', onKeyDown, false );
-				document.addEventListener( 'keyup', onKeyUp, false );
-				window.addEventListener( 'resize', onWindowResize, false );
-			}
-
-			function onKeyDown(event) {
-				var keyCode = event.keyCode;
-				switch (keyCode) {
-					case 68: //d
-						keyD = true;
-						break;
-					case 83: //s
-						keyS = true;
-						break;
-					case 65: //a
-						keyA = true;
-						break;
-					case 87: //w
-						keyW = true;
-						break;
-				}
-			}
-
-
-			function onKeyUp( event ) {
-				var keyCode = event.keyCode;
-				switch (keyCode) {
-					case 68: //d
-						keyD = false;
-						break;
-					case 83: //s
-						keyS = false;
-						break;
-					case 65: //a
-						keyA = false;
-						break;
-					case 87: //w
-						keyW = false;
-						break;
-				}
-			}
-
-			function onWindowResize() {
-				// windowHalfX = window.innerWidth / 2;
-				// windowHalfY = window.innerHeight / 2;
-
-				// camera.left = window.innerWidth / - 2;
-				// camera.right = window.innerWidth / 2;
-				// camera.top = window.innerHeight / 2;
-				// camera.bottom = window.innerHeight / - 2;
-
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
-				renderer.setSize( window.innerWidth, window.innerHeight );
-			}			
-
-			function render() {
-				requestAnimationFrame( render );
-
-				if ( keyW )
-					cube.translateY( step );
-				if ( keyS )
-					cube.translateY( -step );
-				if ( keyA )
-					cube.translateX( -step );
-				if ( keyD )
-					cube.translateX( step );
-
-				renderer.render(scene, camera);
-				stats.update();
-			}
-		 </script>
+		<script src="js/three.js" defer></script>
+		<script src="js/stats.min.js" defer></script>
+		<script src="js/logic.js" defer></script>
 	</body>
 </html>
