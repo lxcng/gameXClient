@@ -156,6 +156,10 @@ function onDocumentMouseMove( event ) {
     return alp
 }
 
+// function onClick( event ){
+    
+// }
+
 function onKeyDown(event){
     var keyCode = event.keyCode;
     switch (keyCode) {
