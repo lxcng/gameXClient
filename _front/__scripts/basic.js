@@ -38,6 +38,16 @@ function initNetwork() {
     socket.onclose = function() { document.title += '-c'; };    
     socket.onmessage = socketUpdate;
 
+    // var socket1 = new WebSocket("ws://178.62.231.240:8000/connect");
+    // socket1.onopen = function() {
+    //     document.title += '+!';
+    // };
+    // socket1.onclose = function() { document.title += '-!'; };    
+    // socket1.onmessage = function(evt) {
+    //     var mess = evt.data;
+    //     document.title = mess;
+    // };
+
 }
 
 function Body(id, x, y, a) {
@@ -125,6 +135,8 @@ function init() {
 
     window.onbeforeunload = function (evt) {
         socket.send('~' + id);
+        // socket.onclose
+        socket.close();
         return message;
     }
 
@@ -139,7 +151,7 @@ function onDocumentMouseMove( event ) {
     var alp = Math.acos( x / l );
     alp = y > 0 ? alp : 2 * Math.PI - alp;
     angle = alp;
-    document.title = x + " " + y + " " + alp;
+    // document.title = x + " " + y + " " + alp;
     socketControl();
     return alp
 }
