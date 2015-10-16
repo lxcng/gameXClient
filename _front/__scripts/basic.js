@@ -14,6 +14,7 @@ var keyS = false;
 var keyA = false;
 var keyD = false;
 var angle = 0.0;
+var click = false;
 var controls_update = false;
 
 var player;
@@ -73,6 +74,29 @@ function Body(id, x, y, a) {
     stage.addChild(this.sprite);
 }
 
+function Bullet(id, x, y, a) {
+    this.id = id;    
+    var texture = PIXI.Texture.fromImage("__assets/__sprites/noj.png");
+    this.sprite = new PIXI.Sprite(texture);
+    this.sprite.anchor.x = 0.5;
+    this.sprite.anchor.y = 0.5;
+    this.sprite.scale.x = 0.2;
+    this.sprite.scale.y = 0.2;
+    this.sprite.position.x = x;
+    this.sprite.position.y = y;
+    this.sprite.rotation = a;
+    this.update = function(x, y, a) {
+        this.sprite.position.x = x;
+        this.sprite.position.y = y;
+        this.sprite.rotation = -a;        
+    }
+    this.delete = function() {
+        stage.removeChild(this.sprite);
+
+    }
+    stage.addChild(this.sprite);
+}
+
 function socketUpdate(evt) {
     var message = evt.data;
     if (message[0] == '^') {
@@ -92,8 +116,13 @@ function socketUpdate(evt) {
             if (body){
                 body.update(x, y, a);
             } else {
-                body = new Body(args[i], x, y, a);
-                body_map.set(args[i], body);
+                // if (args[i].substring(0, 6) == "bullet") {
+                //     bullet = new Bullet(args[i], x, y, a);
+                //     body_map.set(args[i], bullet);
+                // } else {
+                    body = new Body(args[i], x, y, a);
+                    body_map.set(args[i], body);
+                // }
             }
         }
         for (var k of body_map.keys()){
@@ -116,7 +145,10 @@ function socketControl() {
     m += keyS ? "t" :"f";
     m += keyA ? "t" :"f";
     m += keyD ? "t" :"f";
+    m += click ? "t" : "f";
     m += String(angle * 1000).slice(0, 4);
+    if (click)
+        click = false;
     socket.send(m);
     return m;
 }
@@ -141,6 +173,7 @@ function init() {
     }
 
     document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+    document.addEventListener( 'click', onClick, false);
 }
 
 
@@ -152,13 +185,14 @@ function onDocumentMouseMove( event ) {
     alp = y > 0 ? alp : 2 * Math.PI - alp;
     angle = alp;
     // document.title = x + " " + y + " " + alp;
-    socketControl();
+    // socketControl();
     return alp
 }
 
-// function onClick( event ){
-    
-// }
+function onClick( event ){
+    click = true;
+    document.title += ' pew';
+}
 
 function onKeyDown(event){
     var keyCode = event.keyCode;
