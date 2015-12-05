@@ -26,6 +26,10 @@ var id;
 var qwerty;
 
 initNetwork();
+    window.addEventListener( 'keydown', onKeyDown, false );
+    window.addEventListener( 'keyup', onKeyUp, false );
+    window.addEventListener( 'mousemove', onDocumentMouseMove, false );
+    window.addEventListener( 'click', onClick, false);
 init();
 animate();
 
@@ -35,25 +39,15 @@ function initNetwork() {
         document.title += '+c';
         id = Date.now();
         socket.send("#" + id)
+        // animate();
     };
     socket.onclose = function() { document.title += '-c'; };    
     socket.onmessage = socketUpdate;
-
-    // var socket1 = new WebSocket("ws://178.62.231.240:8000/connect");
-    // socket1.onopen = function() {
-    //     document.title += '+!';
-    // };
-    // socket1.onclose = function() { document.title += '-!'; };    
-    // socket1.onmessage = function(evt) {
-    //     var mess = evt.data;
-    //     document.title = mess;
-    // };
-
 }
 
 function Body(id, x, y, a) {
     this.id = id;    
-    var texture = PIXI.Texture.fromImage("__assets/__sprites/gun.png");
+    var texture = PIXI.Texture.fromImage("__assets/__sprites/gun1.png");
     this.sprite = new PIXI.Sprite(texture);
     this.sprite.anchor.x = 0.5;
     this.sprite.anchor.y = 0.5;
@@ -65,11 +59,10 @@ function Body(id, x, y, a) {
     this.update = function(x, y, a) {
         this.sprite.position.x = x;
         this.sprite.position.y = y;
-        this.sprite.rotation = -a;        
+        this.sprite.rotation = a;        
     }
     this.delete = function() {
         stage.removeChild(this.sprite);
-
     }
     stage.addChild(this.sprite);
 }
@@ -84,15 +77,58 @@ function Bullet(id, x, y, a) {
     this.sprite.scale.y = 0.2;
     this.sprite.position.x = x;
     this.sprite.position.y = y;
-    this.sprite.rotation = a;
+    this.sprite.rotation = a - Math.PI / 2;
     this.update = function(x, y, a) {
         this.sprite.position.x = x;
         this.sprite.position.y = y;
-        this.sprite.rotation = -a;        
+        this.sprite.rotation = a + Math.PI / 2;       
     }
     this.delete = function() {
         stage.removeChild(this.sprite);
+    }
+    stage.addChild(this.sprite);
+}
 
+function Door(id, x, y, a, w, h) {
+    this.id = id;    
+    var texture = PIXI.Texture.fromImage("__assets/__sprites/door_wood.png");
+    this.sprite = new PIXI.TilingSprite(texture, w, h);
+    this.sprite.anchor.x = 0.5;
+    this.sprite.anchor.y = 0.5;
+    // this.sprite.scale.x = 0.2;
+    // this.sprite.scale.y = 0.2;
+    this.sprite.position.x = x;
+    this.sprite.position.y = y;
+    // this.sprite.rotation = a - Math.PI / 2;
+    this.update = function(x, y, a) {
+        this.sprite.position.x = x;
+        this.sprite.position.y = y;
+        this.sprite.rotation = a;      
+    }
+    this.delete = function() {
+        stage.removeChild(this.sprite);
+    }
+    stage.addChild(this.sprite);
+}
+
+function Wall(id, x, y, a, w, h) {
+    this.id = id;    
+    var texture = PIXI.Texture.fromImage("__assets/__sprites/brick_wall.png");
+    this.sprite = new PIXI.TilingSprite(texture, w, h);
+    this.sprite.anchor.x = 0.5;
+    this.sprite.anchor.y = 0.5;
+    // this.sprite.scale.x = 0.2;
+    // this.sprite.scale.y = 0.2;
+    this.sprite.position.x = x;
+    this.sprite.position.y = y;
+    // this.sprite.rotation = a - Math.PI / 2;
+    this.update = function(x, y, a) {
+        this.sprite.position.x = x;
+        this.sprite.position.y = y;
+        this.sprite.rotation = a + Math.PI / 2;      
+    }
+    this.delete = function() {
+        stage.removeChild(this.sprite);
     }
     stage.addChild(this.sprite);
 }
@@ -103,12 +139,14 @@ function socketUpdate(evt) {
         var args = message.split('^');
             // qwerty = evt.data;
         var ids = new Set();
-        for (var i = 1; i < args.length; i += 4) {
+        for (var i = 1; i < args.length; i += 5) {
             var body = body_map.get(args[i]);
             ids.add(args[i]);
-            var x = parseFloat(args[i + 1]);
-            var y = parseFloat(args[i + 2]);
-            var a = parseFloat(args[i + 3]);
+            var typ = args[i + 1];
+            var x = parseFloat(args[i + 2]);
+            var y = parseFloat(args[i + 3]);
+            // var a = toRadians(parseInt(args[i + 4]));
+            var a = parseFloat(args[i + 4]);
             if (args[i] == id){
                 stage.position.x = centerX - x;
                 stage.position.y = centerY - y;
@@ -120,8 +158,21 @@ function socketUpdate(evt) {
                 //     bullet = new Bullet(args[i], x, y, a);
                 //     body_map.set(args[i], bullet);
                 // } else {
-                    body = new Body(args[i], x, y, a);
-                    body_map.set(args[i], body);
+                switch(typ){
+                    case '0':
+                        body = new Body(args[i], x, y, a);
+                        body_map.set(args[i], body);
+                        break;
+                    case '2':
+                        body = new Bullet(args[i], x, y, a);
+                        body_map.set(args[i], body);
+                        break;
+                    case '3':
+                        body = new Door(args[i], x, y, a, 10, 90);
+                        body_map.set(args[i], body);
+                        break;
+                }
+                    
                 // }
             }
         }
@@ -146,11 +197,20 @@ function socketControl() {
     m += keyA ? "t" :"f";
     m += keyD ? "t" :"f";
     m += click ? "t" : "f";
-    m += String(angle * 1000).slice(0, 4);
+    // m += String(parseInt(toDegrees(angle)));
+    m += String(angle);
     if (click)
         click = false;
     socket.send(m);
     return m;
+}
+
+function toDegrees (angle) {
+  return angle * (180 / Math.PI);
+}
+
+function toRadians (angle) {
+  return angle * (Math.PI / 180);
 }
 
 function init() {
@@ -160,10 +220,14 @@ function init() {
 
     var ground = PIXI.Texture.fromImage("__assets/__sprites/floor.jpg");
     var g = new PIXI.Sprite(ground);
+    g.position.x = -256;
+    g.position.y = -256;
 
     stage.addChild(g);
-    document.addEventListener( 'keydown', onKeyDown, false );
-    document.addEventListener( 'keyup', onKeyUp, false );
+    // document.addEventListener( 'keydown', onKeyDown, false );
+    // document.addEventListener( 'keyup', onKeyUp, false );
+    // document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+    // document.addEventListener( 'click', onClick, false);
 
     window.onbeforeunload = function (evt) {
         socket.send('~' + id);
@@ -172,8 +236,41 @@ function init() {
         return message;
     }
 
-    document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-    document.addEventListener( 'click', onClick, false);
+    // var bull = new Bullet('123', 0, 0, 0);
+    // body_map.set('123', bull);
+
+    // var graphics = new PIXI.Graphics();
+    // graphics.beginFill(0xFFFF00);
+    // graphics.lineStyle(5, 0xFF0000);
+    // graphics.drawRect(0, 0, 300, 200);
+    // stage.addChild(graphics);
+    // graphics.drawRect(100, 0, 100, 100);
+
+    var texture = PIXI.Texture.fromImage("__assets/__sprites/brick_wall.png");
+    wall = new Wall("wall1", -281, 0, 0.0, 50, 612)
+    wall = new Wall("wall1", 0, -281, 0.0, 512, 50)
+    wall = new Wall("wall1", 0, 281, 0.0, 512, 50)
+    wall = new Wall("wall1",  281, 178, 0.0, 50, 256)
+    wall = new Wall("wall1",  281, -178, 0.0, 50, 256)
+    // var tilingSprite = new PIXI.TilingSprite(texture, 50, 612);
+    // tilingSprite.position.x = -306;
+    // tilingSprite.position.y = -306;
+    // stage.addChild(tilingSprite);
+
+    // tilingSprite = new PIXI.TilingSprite(texture, 50, 612);
+    // tilingSprite.position.x = 256;
+    // tilingSprite.position.y = -306;
+    // stage.addChild(tilingSprite);
+
+    // tilingSprite = new PIXI.TilingSprite(texture, 512, 50);
+    // tilingSprite.position.x = -256;
+    // tilingSprite.position.y = -306;
+    // stage.addChild(tilingSprite);
+
+    // tilingSprite = new PIXI.TilingSprite(texture, 512, 50);
+    // tilingSprite.position.x = -256;
+    // tilingSprite.position.y = 256;
+    // stage.addChild(tilingSprite);
 }
 
 
@@ -191,7 +288,7 @@ function onDocumentMouseMove( event ) {
 
 function onClick( event ){
     click = true;
-    document.title += ' pew';
+    // document.title += ' pew';
 }
 
 function onKeyDown(event){
