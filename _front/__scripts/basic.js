@@ -31,7 +31,7 @@ initNetwork();
     window.addEventListener( 'mousemove', onDocumentMouseMove, false );
     window.addEventListener( 'click', onClick, false);
 init();
-animate();
+// animate();
 
 function initNetwork() {
     socket = new WebSocket("ws://178.62.231.240:8000/sock");
@@ -39,7 +39,7 @@ function initNetwork() {
         document.title += '+c';
         id = Date.now();
         socket.send("#" + id)
-        // animate();
+        animate();
     };
     socket.onclose = function() { document.title += '-c'; };    
     socket.onmessage = socketUpdate;
@@ -147,6 +147,7 @@ function socketUpdate(evt) {
             var y = parseFloat(args[i + 3]);
             // var a = toRadians(parseInt(args[i + 4]));
             var a = parseFloat(args[i + 4]);
+            // var a = toRadians(parseFloat(args[i + 4]));
             if (args[i] == id){
                 stage.position.x = centerX - x;
                 stage.position.y = centerY - y;
@@ -198,7 +199,9 @@ function socketControl() {
     m += keyD ? "t" :"f";
     m += click ? "t" : "f";
     // m += String(parseInt(toDegrees(angle)));
-    m += String(angle);
+    console.log(String(angle).slice(0, 5));
+    // console.log(String(angle));
+    m += String(angle).slice(0, 5);
     if (click)
         click = false;
     socket.send(m);
