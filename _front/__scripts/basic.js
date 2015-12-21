@@ -25,6 +25,8 @@ var id;
 
 var qwerty;
 
+// var yaml = require('../lib/js-yaml');
+
 initNetwork();
     window.addEventListener( 'keydown', onKeyDown, false );
     window.addEventListener( 'keyup', onKeyUp, false );
@@ -39,9 +41,29 @@ function initNetwork() {
         document.title += '+c';
         id = Date.now();
         socket.send("#" + id)
-        animate();
+        // animate();
     };
     socket.onclose = function() { document.title += '-c'; };    
+    socket.onmessage = levelFromYaml;
+}
+
+function levelFromYaml(evt) {
+    var message = evt.data;
+    console.log(message);
+    var lv = YAML.parse(message);
+    var walls = lv.walls;
+    for(var i = 0; i < walls.length; i++){
+    	var wall = walls[i];
+    	new Wall("wall1", wall.x, wall.y, 0.0, wall.w * 2, wall.h * 2);
+    }
+    var doors = lv.doors;
+    for(var i = 0; i < doors.length; i++){
+    	var door = doors[i];
+    	new Door(door.id, door.x, door.y, 0.0, door.w * 2, door.h * 2);
+    }
+    socket.send('ready');
+    animate();
+
     socket.onmessage = socketUpdate;
 }
 
@@ -92,7 +114,7 @@ function Bullet(id, x, y, a) {
 function Door(id, x, y, a, w, h) {
     this.id = id;    
     var texture = PIXI.Texture.fromImage("__assets/__sprites/door_wood.png");
-    this.sprite = new PIXI.TilingSprite(texture, w, h);
+    this.sprite = new PIXI.extras.TilingSprite(texture, w, h);
     this.sprite.anchor.x = 0.5;
     this.sprite.anchor.y = 0.5;
     // this.sprite.scale.x = 0.2;
@@ -108,13 +130,14 @@ function Door(id, x, y, a, w, h) {
     this.delete = function() {
         stage.removeChild(this.sprite);
     }
+    body_map.set(id, this);
     stage.addChild(this.sprite);
 }
 
 function Wall(id, x, y, a, w, h) {
     this.id = id;    
     var texture = PIXI.Texture.fromImage("__assets/__sprites/brick_wall.png");
-    this.sprite = new PIXI.TilingSprite(texture, w, h);
+    this.sprite = new PIXI.extras.TilingSprite(texture, w, h);
     this.sprite.anchor.x = 0.5;
     this.sprite.anchor.y = 0.5;
     // this.sprite.scale.x = 0.2;
@@ -168,10 +191,10 @@ function socketUpdate(evt) {
                         body = new Bullet(args[i], x, y, a);
                         body_map.set(args[i], body);
                         break;
-                    case '3':
-                        body = new Door(args[i], x, y, a, 10, 90);
-                        body_map.set(args[i], body);
-                        break;
+                    // case '3':
+                    //     body = new Door(args[i], x, y, a, 10, 90);
+                    //     body_map.set(args[i], body);
+                    //     break;
                 }
                     
                 // }
@@ -199,7 +222,7 @@ function socketControl() {
     m += keyD ? "t" :"f";
     m += click ? "t" : "f";
     // m += String(parseInt(toDegrees(angle)));
-    console.log(String(angle).slice(0, 5));
+    // console.log(String(angle).slice(0, 5));
     // console.log(String(angle));
     m += String(angle).slice(0, 5);
     if (click)
@@ -236,7 +259,7 @@ function init() {
         socket.send('~' + id);
         // socket.onclose
         socket.close();
-        return message;
+        return;
     }
 
     // var bull = new Bullet('123', 0, 0, 0);
@@ -249,12 +272,12 @@ function init() {
     // stage.addChild(graphics);
     // graphics.drawRect(100, 0, 100, 100);
 
-    var texture = PIXI.Texture.fromImage("__assets/__sprites/brick_wall.png");
-    wall = new Wall("wall1", -281, 0, 0.0, 50, 612)
-    wall = new Wall("wall1", 0, -281, 0.0, 512, 50)
-    wall = new Wall("wall1", 0, 281, 0.0, 512, 50)
-    wall = new Wall("wall1",  281, 178, 0.0, 50, 256)
-    wall = new Wall("wall1",  281, -178, 0.0, 50, 256)
+    // var texture = PIXI.Texture.fromImage("__assets/__sprites/brick_wall.png");
+    // wall = new Wall("wall1", -281, 0, 0.0, 50, 612)
+    // wall = new Wall("wall1", 0, -281, 0.0, 512, 50)
+    // wall = new Wall("wall1", 0, 281, 0.0, 512, 50)
+    // wall = new Wall("wall1",  281, 178, 0.0, 50, 256)
+    // wall = new Wall("wall1",  281, -178, 0.0, 50, 256)
     // var tilingSprite = new PIXI.TilingSprite(texture, 50, 612);
     // tilingSprite.position.x = -306;
     // tilingSprite.position.y = -306;
