@@ -25,6 +25,9 @@ var id;
 
 var qwerty;
 
+var fileReader;
+var arrayBuffer;    
+
 // var yaml = require('../lib/js-yaml');
 
 initNetwork();
@@ -37,20 +40,20 @@ init();
 
 function initNetwork() {
     // socket = new WebSocket("ws://178.62.231.240:8000/sock");
-    socket = new WebSocket("ws://192.168.1.132:8000/sock");
+    socket = new WebSocket("ws://0.0.0.0:8000/sock");
     socket.onopen = function() {
         // document.title += '+c';
         id = Date.now();
-        // socket.send("#" + id);
-        var blob = new ArrayBuffer(10);
-        var view = new Int16Array(blob);
-        view[0] = 10;
-        view[1] = 100;
-        view[2] = 1000;
-        view[3] = -10;
-        view[4] = -1000;
+        socket.send("#" + id);
+        // var blob = new ArrayBuffer(10);
+        // var view = new Int16Array(blob);
+        // view[0] = 10;
+        // view[1] = 100;
+        // view[2] = 1000;
+        // view[3] = -10;
+        // view[4] = -1000;
 
-        socket.send(blob);
+        // socket.send(blob);
 
         console.log("id sent");
         // animate();
@@ -77,6 +80,10 @@ function levelFromYaml(evt) {
     console.log("yaml parsed");
 
     animate();
+    fileReader = new FileReader();
+    fileReader.onload = function() {
+        arrayBuffer = this.result;
+    };
     socket.onmessage = socketUpdate;
 }
 
@@ -90,7 +97,7 @@ function Body(id, x, y, a) {
     this.sprite.scale.y = 0.2;
     this.sprite.position.x = x;
     this.sprite.position.y = y;
-    this.sprite.rotation = a;
+    this.sprite.rotation = -a;
     this.update = function(x, y, a) {
         this.sprite.position.x = x;
         this.sprite.position.y = y;
@@ -112,7 +119,7 @@ function Bullet(id, x, y, a) {
     this.sprite.scale.y = 0.2;
     this.sprite.position.x = x;
     this.sprite.position.y = y;
-    this.sprite.rotation = a - Math.PI / 2;
+    this.sprite.rotation = a + Math.PI / 2;
     this.update = function(x, y, a) {
         this.sprite.position.x = x;
         this.sprite.position.y = y;
@@ -171,91 +178,52 @@ function Wall(id, x, y, a, w, h) {
 
 function socketUpdate(evt) {
     var message = evt.data;
-    	console.log("!!!");
-    var len = decodeURIComponent(escape(message));
-    for (var i = 0; i < message.length ; i += 8){
-    	console.log("");
-    	var f = message.charCodeAt(i);
-    	var s = message.charCodeAt(i + 1);
-    	var n = f << 7;
-    	n += s;
-    	if (n > 8192)
-    		n = n - 16384;
+	// console.log(message.type);
+    // var blob = new ArrayBuffer(message.size);
 
-    	console.log(String(f) + " " + String(s) + " " + String(n));
+    
+    fileReader.readAsArrayBuffer(message);
+    var view = new Int16Array(arrayBuffer);
 
 
-    	
-    	f = message.charCodeAt(i + 2);
-    	s = message.charCodeAt(i + 3);
-    	n = f << 7;
-    	n += s;
-    	if (n > 8192)
-    		n = n - 16384;
-    	console.log(String(f) + " " + String(s) + " " + String(n));
-    	
-    	f = message.charCodeAt(i + 4);
-    	s = message.charCodeAt(i + 5);
-    	n = f << 7;
-    	n += s;
-    	if (n > 8192)
-    		n = n - 16384;
-    	console.log(String(f) + " " + String(s) + " " + String(n));
-    	
-    	f = message.charCodeAt(i + 6);
-    	s = message.charCodeAt(i + 7);
-    	n = f << 7;
-    	n += s;
-    	if (n > 8192)
-    		n = n - 16384;
-    	console.log(String(f) + " " + String(s) + " " + String(n));
+    var ids = new Set();
+    for (var i = 0; i < view.length ; i += 4){
+        // console.log(view[i]);
+        var id = view[i];
+        var typ = id >> 10;
+        var x = view[i + 1];
+        var y = view[i + 2];
+        var a = toRadians(view[i + 3]);
+        ids.add(id);
 
-    }
-
-
-    if (message[0] == '^') {
-        var args = message.split('^');
-            // qwerty = evt.data;
-        var ids = new Set();
-        for (var i = 1; i < args.length; i += 5) {
-            var body = body_map.get(args[i]);
-            ids.add(args[i]);
-            var typ = args[i + 1];
-            var x = parseFloat(args[i + 2]);
-            var y = parseFloat(args[i + 3]);
-            // var a = toRadians(parseInt(args[i + 4]));
-            var a = parseFloat(args[i + 4]);
-            // var a = toRadians(parseFloat(args[i + 4]));
-            if (args[i] == id){
-                stage.position.x = centerX - x;
-                stage.position.y = centerY - y;
-            }
-            if (body){
-                body.update(x, y, a);
-            } else {
-                switch(typ){
-                    case '0':
-                        body = new Body(args[i], x, y, a);
-                        body_map.set(args[i], body);
-                        break;
-                    case '2':
-                        body = new Bullet(args[i], x, y, a);
-                        body_map.set(args[i], body);
-                        break;
-                }
+        if (i == 0){
+            stage.position.x = centerX - x;
+            stage.position.y = centerY - y;
+        }
+        var body = body_map.get(id);
+        if (body){
+            body.update(x, y, a);
+        } else {
+            switch(typ){
+                case 0:
+                    body = new Body(id, x, y, a);
+                    body_map.set(id, body);
+                    break;
+                case 2:
+                    body = new Bullet(id, x, y, a);
+                    body_map.set(id, body);
+                    break;
             }
         }
-        for (var k of body_map.keys()){
-            if (!ids.has(k)){
-                var body = body_map.get(k);
-                body_map.delete(k);
-                body.delete();                
-            }
+
+    }
+    for (var k of body_map.keys()){
+        if (!ids.has(k)){
+            var body = body_map.get(k);
+            body_map.delete(k);
+            body.delete();                
         }
     }
-    // else {
-
-    // }
     return 0;
 }
 
