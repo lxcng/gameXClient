@@ -36,11 +36,23 @@ init();
 // animate();
 
 function initNetwork() {
-    socket = new WebSocket("ws://178.62.231.240:8000/sock");
+    // socket = new WebSocket("ws://178.62.231.240:8000/sock");
+    socket = new WebSocket("ws://192.168.1.132:8000/sock");
     socket.onopen = function() {
-        document.title += '+c';
+        // document.title += '+c';
         id = Date.now();
-        socket.send("#" + id)
+        // socket.send("#" + id);
+        var blob = new ArrayBuffer(10);
+        var view = new Int16Array(blob);
+        view[0] = 10;
+        view[1] = 100;
+        view[2] = 1000;
+        view[3] = -10;
+        view[4] = -1000;
+
+        socket.send(blob);
+
+        console.log("id sent");
         // animate();
     };
     socket.onclose = function() { document.title += '-c'; };    
@@ -49,12 +61,12 @@ function initNetwork() {
 
 function levelFromYaml(evt) {
     var message = evt.data;
-    console.log(message);
+    // console.log(message);
     var lv = YAML.parse(message);
     var walls = lv.walls;
     for(var i = 0; i < walls.length; i++){
     	var wall = walls[i];
-    	new Wall("wall1", wall.x, wall.y, 0.0, wall.w * 2, wall.h * 2);
+    	new Wall(wall.id, wall.x, wall.y, 0.0, wall.w * 2, wall.h * 2);
     }
     var doors = lv.doors;
     for(var i = 0; i < doors.length; i++){
@@ -62,8 +74,9 @@ function levelFromYaml(evt) {
     	new Door(door.id, door.x, door.y, 0.0, door.w * 2, door.h * 2);
     }
     socket.send('ready');
-    animate();
+    console.log("yaml parsed");
 
+    animate();
     socket.onmessage = socketUpdate;
 }
 
@@ -158,6 +171,48 @@ function Wall(id, x, y, a, w, h) {
 
 function socketUpdate(evt) {
     var message = evt.data;
+    	console.log("!!!");
+    var len = decodeURIComponent(escape(message));
+    for (var i = 0; i < message.length ; i += 8){
+    	console.log("");
+    	var f = message.charCodeAt(i);
+    	var s = message.charCodeAt(i + 1);
+    	var n = f << 7;
+    	n += s;
+    	if (n > 8192)
+    		n = n - 16384;
+
+    	console.log(String(f) + " " + String(s) + " " + String(n));
+
+
+    	
+    	f = message.charCodeAt(i + 2);
+    	s = message.charCodeAt(i + 3);
+    	n = f << 7;
+    	n += s;
+    	if (n > 8192)
+    		n = n - 16384;
+    	console.log(String(f) + " " + String(s) + " " + String(n));
+    	
+    	f = message.charCodeAt(i + 4);
+    	s = message.charCodeAt(i + 5);
+    	n = f << 7;
+    	n += s;
+    	if (n > 8192)
+    		n = n - 16384;
+    	console.log(String(f) + " " + String(s) + " " + String(n));
+    	
+    	f = message.charCodeAt(i + 6);
+    	s = message.charCodeAt(i + 7);
+    	n = f << 7;
+    	n += s;
+    	if (n > 8192)
+    		n = n - 16384;
+    	console.log(String(f) + " " + String(s) + " " + String(n));
+
+    }
+
+
     if (message[0] == '^') {
         var args = message.split('^');
             // qwerty = evt.data;
@@ -178,10 +233,6 @@ function socketUpdate(evt) {
             if (body){
                 body.update(x, y, a);
             } else {
-                // if (args[i].substring(0, 6) == "bullet") {
-                //     bullet = new Bullet(args[i], x, y, a);
-                //     body_map.set(args[i], bullet);
-                // } else {
                 switch(typ){
                     case '0':
                         body = new Body(args[i], x, y, a);
@@ -191,13 +242,7 @@ function socketUpdate(evt) {
                         body = new Bullet(args[i], x, y, a);
                         body_map.set(args[i], body);
                         break;
-                    // case '3':
-                    //     body = new Door(args[i], x, y, a, 10, 90);
-                    //     body_map.set(args[i], body);
-                    //     break;
                 }
-                    
-                // }
             }
         }
         for (var k of body_map.keys()){
@@ -214,8 +259,56 @@ function socketUpdate(evt) {
     return 0;
 }
 
+// function socketUpdate(evt) {
+//     var message = evt.data;
+//     if (message[0] == '^') {
+//         var args = message.split('^');
+//             // qwerty = evt.data;
+//         var ids = new Set();
+//         for (var i = 1; i < args.length; i += 5) {
+//             var body = body_map.get(args[i]);
+//             ids.add(args[i]);
+//             var typ = args[i + 1];
+//             var x = parseFloat(args[i + 2]);
+//             var y = parseFloat(args[i + 3]);
+//             // var a = toRadians(parseInt(args[i + 4]));
+//             var a = parseFloat(args[i + 4]);
+//             // var a = toRadians(parseFloat(args[i + 4]));
+//             if (args[i] == id){
+//                 stage.position.x = centerX - x;
+//                 stage.position.y = centerY - y;
+//             }
+//             if (body){
+//                 body.update(x, y, a);
+//             } else {
+//                 switch(typ){
+//                     case '0':
+//                         body = new Body(args[i], x, y, a);
+//                         body_map.set(args[i], body);
+//                         break;
+//                     case '2':
+//                         body = new Bullet(args[i], x, y, a);
+//                         body_map.set(args[i], body);
+//                         break;
+//                 }
+//             }
+//         }
+//         for (var k of body_map.keys()){
+//             if (!ids.has(k)){
+//                 var body = body_map.get(k);
+//                 body_map.delete(k);
+//                 body.delete();                
+//             }
+//         }
+//     }
+//     // else {
+
+//     // }
+//     return 0;
+// }
+
 function socketControl() {
-    var m = "*" + id + "*";
+    var m = "*";
     m += keyW ? "t" :"f";
     m += keyS ? "t" :"f";
     m += keyA ? "t" :"f";
@@ -224,7 +317,7 @@ function socketControl() {
     // m += String(parseInt(toDegrees(angle)));
     // console.log(String(angle).slice(0, 5));
     // console.log(String(angle));
-    m += String(angle).slice(0, 5);
+    m += String(toDegrees(angle));
     if (click)
         click = false;
     socket.send(m);
@@ -232,6 +325,8 @@ function socketControl() {
 }
 
 function toDegrees (angle) {
+	if (angle < 0)
+		angle = Math.PI - angle;
   return angle * (180 / Math.PI);
 }
 
